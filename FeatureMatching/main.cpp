@@ -17,8 +17,8 @@ double	maxValue = 0;
 // 0:テンプレートマッチングのみ  1:評価値計算
 
 // # define _ImageDirectory "/img
-# define _ImageField "/img/fieldMap2.jpg"
-# define _ImageMatch "/img/a001.jpg"
+// # define _ImageField "/img/fieldMap2.jpg"
+// # define _ImageMatch "/img/a001.jpg"
 
 
 
@@ -91,10 +91,10 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 
 int main()
 {
-	Mat img1 = imread(_ImageField);
-	Mat img2 = imread(_ImageMatch);
-	//Mat img1 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/fieldMap2.jpg");
-	//Mat img2 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/c109.jpg");
+	//Mat img1 = imread(_ImageField);
+	//Mat img2 = imread(_ImageMatch);
+	Mat img1 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/fieldMap2.jpg");
+	Mat img2 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/c109.jpg");
 	Mat match;	
 	Mat kaitenImg;
 	Point Pt;
