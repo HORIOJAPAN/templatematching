@@ -288,7 +288,7 @@ int main()
 	Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
 	warpAffine(img2, kaitenImg, matrix, img2.size());
 	//matchTemplate(sub, kaitenImg, match, CV_TM_CCOEFF_NORMED);
-	minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
+	//minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
 	rectangle(sub , maxPt, Point(maxPt.x + kaitenImg.cols, maxPt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
 	imshow("kaitenImg", kaitenImg);
 
