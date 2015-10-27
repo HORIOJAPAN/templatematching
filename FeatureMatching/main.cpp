@@ -12,9 +12,9 @@ using namespace cv;
 // 0:評価値基準の最適座標  1:自己位置座標を無視してマッチング率基準の最適座標
 
 # define _ImageField "./img/fieldMap2.jpg"
-# define _ImageMatch "./img/c102.jpg"
+# define _ImageMatch "./img/b102.jpg"
 // _MatchArea => a:1 b:2 c:3
-# define _MatchArea 3
+# define _MatchArea 2
 
 # define _HyokaKizyun Evaluation1
 
@@ -267,7 +267,7 @@ int main()
 # endif
 
 	printf("%d度ずつ刻んでマッチ開始\n", (int)kizamiKakudo1);
-	printf("相対度\t相関値\tx,y\t距離\t評価値\n");
+	printf("相対度\t相関値\t   x,y\t   距離\t評価値\n");
 	MatchingEvaluation(sub, img2, 0, kakudoHaba1, kizamiKakudo1);
 
 	/*
@@ -279,7 +279,7 @@ int main()
 	*/
 
 	printf("%d度ずつ刻んでマッチ開始\n", (int)kizamiKakudo2);
-	printf("相対度\t相関値\tx,y\t距離\t評価値\n");
+	printf("相対度\t相関値\t   x,y\t   距離\t評価値\n");
 
 	D = 0.0;
 	MatchingEvaluation(sub, img2, Angle, kakudoHaba2, kizamiKakudo2);
@@ -293,7 +293,7 @@ int main()
 	minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
 	rectangle(sub , maxPt, Point(maxPt.x + kaitenImg.cols, maxPt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
 	imshow("kaitenImg", kaitenImg);
-	std::cout << "\n" << (int)angle << "\t" << maxValue << " \t" << maxPt.x << "," << maxPt.y << "\t" << (int)maxDistance << "   " <<
+	std::cout << "\n" << (int)angle << "\t" << maxValue << "    " << maxPt.x << "," << maxPt.y << "\t" << (int)maxDistance << "   " <<
 		maxEvaluation1 << "\t" << maxEvaluation2 << "\t" << maxEvaluation3 << std::endl;
 	printf("%ld[ms]\n" , clock()-start);
 	imshow("Image", sub);
