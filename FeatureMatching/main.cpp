@@ -2,6 +2,8 @@
 #include <opencv2/opencv_lib.hpp>
 #include <opencv2/nonfree/nonfree.hpp> // SIFT・SURFモジュール用
 #include <time.h>
+#include <math.h>
+#include <stdio.h>
 
 using namespace cv;
 
@@ -11,26 +13,33 @@ float	Angle = 10.0;
 float	D = 0.0;
 double	maxValue = 0;
 
-# define ai
+# define _Evaluate 0 
+// 0:テンプレートマッチングのみ  1:評価値計算
 
-void MatchingEvaluation(
-	const cv::Mat img1,			// 画像１のファイル名
-	const cv::Mat img2,			// 画像２のファイル名
-	float angle_center,			// 幅の中心
-	float angle_width,			// 角度幅
-	float angle_shredded		// 刻み角度
-	)
+# define _ImageDirectory /img
+# define _ImageField /fieldMap2.jpg
+# define _ImageMatch /a001.jpg
+
+
+
+void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
+							const cv::Mat img2,			// 画像２のファイル名
+							float angle_center,			// 幅の中心
+							float angle_width,			// 角度幅
+							float angle_shredded		// 刻み角度				
+							)
 {
+	// テンプレートマッチングと評価値の算出・最適値の出力
 
 	Mat match;
 	Mat kaitenImg;
 	Point Pt;
-	float distance;
-	float Evaluation;
-	double maxVal;
+	float distance;		// 理想座標とマッチング座標の相対距離
+	float Evaluation;	// 評価値
+	double maxVal;		// マッチング率の最大値
 	double maxVal_1 = 0, maxVal_2 = 0;
 
-	for (float i = (angle_center)-(angle_width); i < (angle_center) + (angle_width) + 1 ; i += angle_shredded){
+	for (float i = (angle_center)-(angle_width); i < ((angle_center) + (angle_width) + 1) ; i += angle_shredded){
 
 		// 回転：  [deg]
 		float angle = i;
@@ -42,6 +51,7 @@ void MatchingEvaluation(
 		Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
 		// 画像を回転
 		warpAffine(img2, kaitenImg, matrix, img2.size());
+		// ウィンドウ表示
 		imshow("kaitenImg", kaitenImg);
 		// マッチング
 		matchTemplate(img1, kaitenImg, match, CV_TM_CCOEFF_NORMED);
@@ -50,16 +60,19 @@ void MatchingEvaluation(
 		// エンコーダによる自己位置とマッチング後の自己位置の相対距離を求める
 		distance = sqrt(powf((Pt.x - ideal_x), 2) + powf((Pt.y - ideal_y), 2));
 
-		if (distance > 6){
+
+		// ↓評価値の計算はじめ
+		if (distance > 6){ // 距離が6（6ピクセル：30cm）未満のとき
 			Evaluation = maxVal - log10(distance) / 5;
 		}
 		else{
 			Evaluation = maxVal;
 		}
+		// ↑評価値の計算おわり
 
 		printf("%d\t%lf\t%d,%d \t%d\t%lf\n", (int)i, maxVal, Pt.x, Pt.y, (long)distance, Evaluation);
 
-# ifdef ai
+# if _Evaluate == 0
 		if (maxVal > maxValue){
 			maxValue = maxVal;
 			Angle = angle;
@@ -74,15 +87,15 @@ void MatchingEvaluation(
 		}
 # endif
 	}
-
 }
 
 
 int main()
 {
-
-	Mat img1 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/fieldMap2.jpg");
-	Mat img2 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/c109.jpg");
+	Mat img1 = imread("_ImageDirectory_ImageField");
+	Mat img2 = imread("_ImageDirectory_ImageMatch");
+	//Mat img1 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/fieldMap2.jpg");
+	//Mat img2 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/c109.jpg");
 	Mat match;	
 	Mat kaitenImg;
 	Point Pt;
@@ -108,7 +121,7 @@ int main()
 
 	//MatchingEvaluation(sub,img2,0,30,n);
 
-# ifndef ai
+# if _Evaluate
 	if (D == 0.0){
 		printf("%f\n", D);
 		printf("No matching\n");
