@@ -16,6 +16,8 @@ using namespace cv;
 // _MatchArea => a:1 b:2 c:3
 # define _MatchArea 1
 
+# define _HyokaKizyun Evaluation1
+
 # define _FieldHeight 1000
 # define _FieldWidth 1000
 
@@ -206,16 +208,12 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 		distance = sqrt(powf((Pt.x - ideal_x), 2) + powf((Pt.y - ideal_y), 2));
 
 
-		// ↓評価値の計算はじめ
 		Hyoka1(i, distance, maxVal, Evaluation1);
 		Hyoka2(i, distance, maxVal, Evaluation2);
 		Hyoka3(i, distance, maxVal, Evaluation3);
-		// ↑評価値の計算おわり
 
-		std::cout << (int)i << "\t" << maxVal<< " \t" << Pt.x<< "," << Pt.y << "\t" << (int)distance << "   " <<
-			Evaluation1 << "\t" << Evaluation2 << "\t" << Evaluation3 << std::endl;
 
-# if _Evaluate == 0
+# if _Evaluate == 1
 		if (maxVal > maxValue){
 			maxValue = maxVal;
 			Angle = angle;
@@ -223,7 +221,7 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 			maxMatch = match;
 		}
 # else
-		if (Evaluation1 > maxEvaluation){
+		if (_HyokaKizyun > maxEvaluation){
 			maxValue = maxVal;
 			Angle = angle;
 			maxPt = Pt; 
@@ -235,6 +233,8 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 			maxEvaluation3 = Evaluation3;
 		}
 # endif
+		std::cout << (int)i << "\t" << maxVal<< " \t" << Pt.x<< "," << Pt.y << "\t" << (int)distance << "   " <<
+			Evaluation1 << "\t" << Evaluation2 << "\t" << Evaluation3 << std::endl;
 	}
 }
 
