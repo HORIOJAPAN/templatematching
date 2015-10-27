@@ -4,6 +4,7 @@
 #include <time.h>
 #include <math.h>
 #include <stdio.h>
+#include <iostream>
 
 using namespace cv;
 
@@ -13,12 +14,12 @@ float	Angle = 10.0;
 float	D = 0.0;
 double	maxValue = 0;
 
-# define _Evaluate 0 
 // 0:テンプレートマッチングのみ  1:評価値計算
+# define _Evaluate 0 
 
 // # define _ImageDirectory "/img
 // # define _ImageField "/img/fieldMap2.jpg"
-// # define _ImageMatch "/img/a001.jpg"
+# define _ImageMatch " ## \" ## /img/a001.jpg ## \" ## "
 
 
 
@@ -32,12 +33,12 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 	// テンプレートマッチングと評価値の算出・最適値の出力
 
 	Mat match;
-	Mat kaitenImg;
+	// Mat kaitenImg;
 	Point Pt;
 	float distance;		// 理想座標とマッチング座標の相対距離
 	float Evaluation;	// 評価値
 	double maxVal;		// マッチング率の最大値
-	double maxVal_1 = 0, maxVal_2 = 0;
+	// double maxVal_1 = 0, maxVal_2 = 0;
 
 	for (float i = (angle_center)-(angle_width); i < ((angle_center) + (angle_width) + 1) ; i += angle_shredded){
 		// 回転：  [deg]
@@ -52,7 +53,7 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 		warpAffine(img2, kaitenImg, matrix, img2.size());
 		// ウィンドウ表示
 		imshow("kaitenImg", kaitenImg);
-		// マッチング
+		// テンプレートマッチング
 		matchTemplate(img1, kaitenImg, match, CV_TM_CCOEFF_NORMED);
 		// 相関値を求める
 		minMaxLoc(match, NULL, &maxVal, NULL, &Pt);
@@ -69,7 +70,10 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 		}
 		// ↑評価値の計算おわり
 
-		printf("%d\t%lf\t%d,%d \t%d\t%lf\n", (int)i, maxVal, Pt.x, Pt.y, (long)distance, Evaluation);
+		// printf("%d\t%lf\t%d,%d \t%d\t%lf\n", (int)i, maxVal, Pt.x, Pt.y, (long)distance, Evaluation);
+
+		std::cout << (int)i << "\t" << maxVal << "\t" << Pt.x << "," << Pt.y << "\t" 
+			<< (int)distance << "\t" << Evaluation << std::endl;
 
 # if _Evaluate == 0
 		if (maxVal > maxValue){
@@ -92,7 +96,7 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 int main()
 {
 	//Mat img1 = imread(_ImageField);
-	//Mat img2 = imread(_ImageMatch);
+	Mat img2 = imread(_ImageMatch);
 	Mat img1 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/fieldMap2.jpg");
 	Mat img2 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/c109.jpg");
 	Mat match;	
@@ -150,6 +154,5 @@ int main()
 	printf("%ld\n" , clock()-start);
 	imshow("Image", sub);
 	waitKey(0);
-
 }
 
