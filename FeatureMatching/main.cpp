@@ -8,23 +8,46 @@
 
 using namespace cv;
 
-int		ideal_x = 610;
-int		ideal_y = 460;
-double	maxValue = 0;
-float	Angle = 0.0;
-float	D = 0.0;
-
-# define _Evaluate 1
+# define _Evaluate 0
 // 0:自己位置を直接入力  1:相関値のみで自己位置を推定
 // 0:テンプレートマッチングのみ  1:評価値計算
 
 # define _ImageField "./img/fieldMap2.jpg"
-# define _ImageMatch "./img/c109.jpg"
+# define _ImageMatch "./img/a002.jpg"
+// _MatchArea => a:1 b:2 c:3
+# define _MatchArea 1
 
+# define _FieldHeight 1000
+# define _FieldWidth 1000
+
+// 外側をマッチング対象としないとき、外側からの率を指定
 # define _RightMargin 0
 # define _LeftMargin 0
-# define _UpMargin 0
-# define _DownMargin 0
+# define _UpMargin 0.3
+# define _DownMargin 0.3
+
+const int rightMargin = _FieldWidth * _RightMargin;
+const int leftMargin = _FieldWidth * _LeftMargin;
+const int upMargin = _FieldHeight * _UpMargin;
+const int downMargin = _FieldHeight * _DownMargin;
+
+# if _MatchArea == 1
+int		ideal_x = 175;
+int		ideal_y = 403;
+# elif _MatchArea == 2
+int		ideal_x = 374;
+int		ideal_y = 423;
+# elif _MatchArea == 3
+int		ideal_x = 611;
+int		ideal_y = 458;
+# else
+int		ideal_x = _FieldHeight / 2;
+int		ideal_y = _FieldWidth / 2;
+# endif
+
+double	maxValue = 0;
+float	Angle = 0.0;
+float	D = 0.0;
 
 
 
@@ -68,6 +91,7 @@ void Localization(		const cv::Mat img1,			// 画像１のファイル名
 			maxValue = maxVal;
 			Angle = angle;
 		}
+		std::cout << (int)i << "\t" << maxVal << "\t" << Pt.x << "," << Pt.y << std::endl;
 	}
 	printf("%f\t%lf\t%d,%d\n", Angle, maxValue, ideal_x, ideal_y);
 }
@@ -155,10 +179,13 @@ int main()
 	float ex_angle = 0.0;
 	double maxValue = 0;
 
+	ideal_x -= leftMargin;
+	ideal_y -= upMargin;
+
 	clock_t start = clock();
 
 	// img1の画像の領域を指定
-	Mat sub = img1(Rect(_LeftMargin, _UpMargin, 1000 - _LeftMargin - _RightMargin, 1000 - _UpMargin - _DownMargin));
+	Mat sub = img1(Rect(leftMargin, upMargin, 1000 - leftMargin - rightMargin, 1000 - upMargin - downMargin));
 	//imshow("Img", img2);
 
 # if _Evaluate
@@ -174,12 +201,14 @@ int main()
 	printf("度\t相関値\t\tx,y\t距離\t評価値\n");
 	MatchingEvaluation(sub, img2, 0, 45, n);
 
+# if _Evaluate
 	if (D == 0.0){
 		printf("%f\n", D);
 		printf("No matching\n");
 		return(0);
 	}
-	
+# endif
+
 	printf("1度ずつ刻んでマッチ開始\n");
 	printf("度\t相関値\t\tx,y\t\t距離\t評価値\n");
 
