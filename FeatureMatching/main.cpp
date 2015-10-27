@@ -53,8 +53,34 @@ Point maxPt;
 Mat maxMatch;
 
 
+/*
+ * 変更する箇所
+ * 
+# define _ImageField "./img/fieldMap2.jpg"
+ * ↑fieldMap.jpg と fieldMap2.jpg 後者が手書きで修正したもの．基本的に後者を使う
+ * 
+# define _ImageMatch "./img/a002.jpg"
+ * ↑a,b,c 001~ , 101~ ただし，ディレクトリにないファイルを参照するとエラーになるのでよく見る
+ * 
+# define _MatchArea 1
+ * ↑上で編集したマッチング画像の頭文字に応じて変更する．理想座標を変更する（自己位置の基準座標）
+ * a:1 b:2 c:3
+ * 
+ */
+
+/*
+ * 評価値の計算方法
+ * 引数は「tilt:相対角度」「dist:相対距離」「matchRatio:画像のマッチング率」
+ * 角度は[deg]，距離は[pixel/5cm],マッチング率は 1 ~ 0
+ * 角度と座標は実際のロボットの移動精度を考慮する
+ * マッチング率は2枚の画像を載せたときにそのピクセルごとにアルかナイかを判定してる様子
+ * それによって，元画像の線が太いと多少の角度は許容されるなど
+ * Hyoka1ではマッチング率に桁をあわせて減点法で正負を判断しているが，これに縛られる必要はない
+*/
+
+
 void Hyoka1(float tilt, int dist, float matchRatio ,float& point){
-	if (dist > 6){ // 距離が6（6ピクセル：30cm）未満のとき
+	if (dist > 6){
 		point = matchRatio - log10(dist) / 5;
 	}
 	else{
@@ -62,11 +88,13 @@ void Hyoka1(float tilt, int dist, float matchRatio ,float& point){
 	}
 }
 void Hyoka2(float tilt, int dist, float matchRatio, float& point){
-	point = 0;
+	point = matchRatio * 100 - dist;
 }
 void Hyoka3(float tilt, int dist, float matchRatio, float& point){
-	point = 0;
+	point = 100 - dist - abs(tilt)*3 ;
 }
+
+
 
 void Localization(		const cv::Mat img1,			// 画像１のファイル名
 						const cv::Mat img2,			// 画像２のファイル名
