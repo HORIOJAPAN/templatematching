@@ -9,11 +9,10 @@
 using namespace cv;
 
 # define _Evaluate 0
-// 0:自己位置を直接入力  1:相関値のみで自己位置を推定
-// 0:テンプレートマッチングのみ  1:評価値計算
+// 0:評価値基準の最適座標  1:自己位置座標を無視してマッチング率基準の最適座標
 
 # define _ImageField "./img/fieldMap2.jpg"
-# define _ImageMatch "./img/a002.jpg"
+# define _ImageMatch "./img/a001.jpg"
 // _MatchArea => a:1 b:2 c:3
 # define _MatchArea 1
 
@@ -163,6 +162,8 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 				maxValue = maxVal;
 				Angle = angle;
 				D = Evaluation;
+				maxPt = Pt;
+				maxMatch = match;
 			}
 		}
 # endif
@@ -206,6 +207,7 @@ int main()
 	if (D == 0.0){
 		printf("%f\n", D);
 		printf("No matching\n");
+		waitKey(0);
 		return(0);
 	}
 # endif
@@ -222,7 +224,7 @@ int main()
 	Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
 	warpAffine(img2, kaitenImg, matrix, img2.size());
 	//matchTemplate(sub, kaitenImg, match, CV_TM_CCOEFF_NORMED);
-	minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
+	//minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
 	rectangle(sub , maxPt, Point(maxPt.x + kaitenImg.cols, maxPt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
 	imshow("kaitenImg", kaitenImg);
 	printf("Angle = %f position.x = %d position.y = %d \n", angle, maxPt.x , maxPt.y);
