@@ -15,7 +15,7 @@ using namespace cv;
 # define _ImageMatch "./img/b102.jpg"
 // _MatchArea => a:1 b:2 c:3
 # define _MatchArea 2
-
+// _HyokaKizyun : •]‰¿Šî€1,2,3‚Ì‚Ç‚ê‚É‚·‚é‚©
 # define _HyokaKizyun Evaluation1
 
 # define _FieldHeight 1000
