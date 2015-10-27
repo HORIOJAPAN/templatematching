@@ -16,11 +16,10 @@ float	D = 0.0;
 
 # define _Evaluate 1
 // 0:テンプレートマッチングのみ  1:評価値計算
-# define _Evaluate 0 
 
-// # define _ImageDirectory "/img
-// # define _ImageField "/img/fieldMap2.jpg"
-// # define _ImageMatch " ## \" ## /img/a001.jpg ## \" ## "
+# define _ImageField "./img/fieldMap2.jpg"
+# define _ImageMatch "./img/c109.jpg"
+
 
 
 
@@ -82,6 +81,7 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 	float distance;		// 理想座標とマッチング座標の相対距離
 	float Evaluation;	// 評価値
 	double maxVal;		// マッチング率の最大値
+	double maxVal_1 = 0, maxVal_2 = 0;
 
 	for (float i = (angle_center)-(angle_width); i < ((angle_center)+(angle_width)+1); i += angle_shredded){
 		// 回転：  [deg]
@@ -115,9 +115,6 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 
 		// printf("%d\t%lf\t%d,%d \t%d\t%lf\n", (int)i, maxVal, Pt.x, Pt.y, (long)distance, Evaluation);
 
-		std::cout << (int)i << "\t" << maxVal << "\t" << Pt.x << "," << Pt.y << "\t" 
-			<< (int)distance << "\t" << Evaluation << std::endl;
-
 # if _Evaluate == 0
 		if (maxVal > maxValue){
 			maxValue = maxVal;
@@ -131,16 +128,17 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 				D = Evaluation;
 			}
 		}
+# endif
 	}
 }
 
 
 int main()
 {
-	//Mat img1 = imread(_ImageField);
-	//Mat img2 = imread(_ImageMatch);
-	Mat img1 = imread("/img/fieldMap2.jpg");
-	Mat img2 = imread("/img/c109.jpg");
+	Mat img1 = imread(_ImageField);
+	Mat img2 = imread(_ImageMatch);
+	//Mat img1 = imread("./img/fieldMap2.jpg");
+	//Mat img2 = imread("./img/c109.jpg");
 	Mat match;	
 	Mat kaitenImg;
 	Point Pt;
@@ -196,4 +194,4 @@ int main()
 	imshow("Image", sub);
 	waitKey(0);
 }
-
+ 
