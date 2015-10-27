@@ -246,8 +246,6 @@ int main()
 	//Mat img1 = imread("./img/fieldMap2.jpg");
 	//Mat img2 = imread("./img/c109.jpg");
 	Mat kaitenImg;
-	float ex_angle = 0.0;
-	double maxValue = 0;
 
 	ideal_x -= leftMargin;
 	ideal_y -= upMargin;
@@ -279,7 +277,7 @@ int main()
 	*/
 
 	printf("%d度ずつ刻んでマッチ開始\n", (int)kizamiKakudo2);
-	printf("相対度\t相関値\t   x,y\t   距離\t評価値\n");
+	printf("相対度\t相関値\t  x,y\t   距離\t評価値\n");
 
 	D = 0.0;
 	MatchingEvaluation(sub, img2, Angle, kakudoHaba2, kizamiKakudo2);
@@ -293,9 +291,11 @@ int main()
 	minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
 	rectangle(sub , maxPt, Point(maxPt.x + kaitenImg.cols, maxPt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
 	imshow("kaitenImg", kaitenImg);
+
 	std::cout << "\n" << (int)angle << "\t" << maxValue << "    " << maxPt.x << "," << maxPt.y << "\t" << (int)maxDistance << "   " <<
 		maxEvaluation1 << "\t" << maxEvaluation2 << "\t" << maxEvaluation3 << std::endl;
 	printf("%ld[ms]\n" , clock()-start);
+
 	imshow("Image", sub);
 	waitKey(0);
 }
