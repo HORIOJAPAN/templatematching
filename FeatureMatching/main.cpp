@@ -53,8 +53,19 @@ Point maxPt;
 Mat maxMatch;
 
 
-void EvaluateMatching1(float tilt, int distance, float matchRatio){
-
+void Hyoka1(float tilt, int dist, float matchRatio ,float& point){
+	if (dist > 6){ // 距離が6（6ピクセル：30cm）未満のとき
+		point = matchRatio - log10(dist) / 5;
+	}
+	else{
+		point = matchRatio;
+	}
+}
+void Hyoka2(float tilt, int dist, float matchRatio, float& point){
+	point = 0;
+}
+void Hyoka3(float tilt, int dist, float matchRatio, float& point){
+	point = 0;
 }
 
 void Localization(		const cv::Mat img1,			// 画像１のファイル名
@@ -69,6 +80,10 @@ void Localization(		const cv::Mat img1,			// 画像１のファイル名
 	Mat match;
 	Mat kaitenImg;
 	Point Pt;
+	float distance;		// 理想座標とマッチング座標の相対距離
+	float Evaluation1;	// 評価値
+	float Evaluation2;	// 評価値
+	float Evaluation3;	// 評価値
 	double maxVal;		// マッチング率の最大値
 
 	for (float i = (angle_center)-(angle_width); i < ((angle_center) + (angle_width) + 1) ; i += angle_shredded){
@@ -88,6 +103,18 @@ void Localization(		const cv::Mat img1,			// 画像１のファイル名
 		matchTemplate(img1, kaitenImg, match, CV_TM_CCOEFF_NORMED);
 		// 相関値を求める
 		minMaxLoc(match, NULL, &maxVal, NULL, &Pt);
+		// エンコーダによる自己位置とマッチング後の自己位置の相対距離を求める
+		distance = sqrt(powf((Pt.x - ideal_x), 2) + powf((Pt.y - ideal_y), 2));
+
+
+		// ↓評価値の計算はじめ
+		Hyoka1(i, distance, maxVal, Evaluation1);
+		Hyoka2(i, distance, maxVal, Evaluation2);
+		Hyoka3(i, distance, maxVal, Evaluation3);
+		// ↑評価値の計算おわり
+
+		std::cout << (int)i << "\t" << maxVal << "\t" << Pt.x << "," << Pt.y << "\t" << (int)distance << "\t" <<
+			Evaluation1 << "  " << Evaluation2 << "  " << Evaluation3 << std::endl;
 
 		//printf("%d\t%lf\t%d,%d\n", (int)i, maxVal, Pt.x, Pt.y);
 
@@ -97,7 +124,6 @@ void Localization(		const cv::Mat img1,			// 画像１のファイル名
 			maxValue = maxVal;
 			Angle = angle;
 		}
-		std::cout << (int)i << "\t" << maxVal << "\t" << Pt.x << "," << Pt.y << std::endl;
 	}
 	printf("%f\t%lf\t%d,%d\n", Angle, maxValue, ideal_x, ideal_y);
 }
@@ -115,7 +141,9 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 	Mat kaitenImg;
 	Point Pt;
 	float distance;		// 理想座標とマッチング座標の相対距離
-	float Evaluation;	// 評価値
+	float Evaluation1;	// 評価値
+	float Evaluation2;	// 評価値
+	float Evaluation3;	// 評価値
 	double maxVal;		// マッチング率の最大値
 	// double maxVal_1 = 0, maxVal_2 = 0;
 
@@ -141,20 +169,13 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 
 
 		// ↓評価値の計算はじめ
-
-		EvaluateMaching1(i, distance, maxVal);
-		if (distance > 6){ // 距離が6（6ピクセル：30cm）未満のとき
-			Evaluation = maxVal - log10(distance) / 5;
-		}
-		else{
-			Evaluation = maxVal;
-		}
+		Hyoka1(i, distance, maxVal, Evaluation1);
+		Hyoka2(i, distance, maxVal, Evaluation2);
+		Hyoka3(i, distance, maxVal, Evaluation3);
 		// ↑評価値の計算おわり
 
-		// printf("%d\t%lf\t%d,%d \t%d\t%lf\n", (int)i, maxVal, Pt.x, Pt.y, (long)distance, Evaluation);
-
-		std::cout << (int)i << "\t" << maxVal<< "\t" << Pt.x<< "," << Pt.y <<
-			"\t" << (int)distance<< "\t" << Evaluation << std::endl;
+		std::cout << (int)i << "\t" << maxVal<< "\t" << Pt.x<< "," << Pt.y << "\t" << (int)distance << "\t" <<
+			Evaluation1 << "  " << Evaluation2 << "  " << Evaluation3 << std::endl;
 
 # if _Evaluate == 0
 		if (maxVal > maxValue){
@@ -164,11 +185,11 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 			maxMatch = match;
 		}
 # else
-		if (Evaluation > 0){
-			if (D < Evaluation){
+		if (Evaluation1 > 0){
+			if (D < Evaluation1){
 				maxValue = maxVal;
 				Angle = angle;
-				D = Evaluation;
+				D = Evaluation1;
 			}
 		}
 # endif
