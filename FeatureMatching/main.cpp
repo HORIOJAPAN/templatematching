@@ -21,7 +21,9 @@ float	D = 0.0;
 // # define _ImageField "/img/fieldMap2.jpg"
 // # define _ImageMatch "/img/a001.jpg"
 
+void EvaluateMatching1(float tilt, int distance, float matchRatio){
 
+}
 
 void Localization(		const cv::Mat img1,			// 画像１のファイル名
 						const cv::Mat img2,			// 画像２のファイル名
@@ -63,6 +65,7 @@ void Localization(		const cv::Mat img1,			// 画像１のファイル名
 			maxValue = maxVal;
 			Angle = angle;
 		}
+		std::cout << (int)i << "\t" << maxVal << "\t" << Pt.x << "," << Pt.y << std::endl;
 	}
 	printf("%f\t%lf\t%d,%d\n", Angle, maxValue, ideal_x, ideal_y);
 }
@@ -105,6 +108,8 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 
 
 		// ↓評価値の計算はじめ
+
+		EvaluateMaching1(i, distance, maxVal);
 		if (distance > 6){ // 距離が6（6ピクセル：30cm）未満のとき
 			Evaluation = maxVal - log10(distance) / 5;
 		}
