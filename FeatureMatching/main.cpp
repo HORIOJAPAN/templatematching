@@ -21,6 +21,10 @@ float	D = 0.0;
 # define _ImageField "./img/fieldMap2.jpg"
 # define _ImageMatch "./img/c109.jpg"
 
+# define _RightMargin 0
+# define _LeftMargin 0
+# define _UpMargin 0
+# define _DownMargin 0
 
 
 
@@ -83,7 +87,7 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 	float distance;		// 理想座標とマッチング座標の相対距離
 	float Evaluation;	// 評価値
 	double maxVal;		// マッチング率の最大値
-	double maxVal_1 = 0, maxVal_2 = 0;
+	// double maxVal_1 = 0, maxVal_2 = 0;
 
 	for (float i = (angle_center)-(angle_width); i < ((angle_center)+(angle_width)+1); i += angle_shredded){
 		// 回転：  [deg]
@@ -116,6 +120,9 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 		// ↑評価値の計算おわり
 
 		// printf("%d\t%lf\t%d,%d \t%d\t%lf\n", (int)i, maxVal, Pt.x, Pt.y, (long)distance, Evaluation);
+
+		std::cout << (int)i << "\t" << maxVal<< "\t" << Pt.x<< "," << Pt.y <<
+			"\t" << (int)distance<< "\t" << Evaluation << std::endl;
 
 # if _Evaluate == 0
 		if (maxVal > maxValue){
@@ -151,7 +158,7 @@ int main()
 	clock_t start = clock();
 
 	// img1の画像の領域を指定
-	Mat sub = img1(Rect(0, 0, 1000,1000));
+	Mat sub = img1(Rect(_LeftMargin, _UpMargin, 1000 - _LeftMargin - _RightMargin, 1000 - _UpMargin - _DownMargin));
 	//imshow("Img", img2);
 
 # if _Evaluate
