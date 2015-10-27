@@ -49,6 +49,8 @@ double	maxValue = 0;
 float	Angle = 0.0;
 float	D = 0.0;
 
+Point maxPt;
+Mat maxMatch;
 
 
 void Localization(		const cv::Mat img1,			// 画像１のファイル名
@@ -152,6 +154,8 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 		if (maxVal > maxValue){
 			maxValue = maxVal;
 			Angle = angle;
+			maxPt = Pt; 
+			maxMatch = match;
 		}
 # else
 		if (Evaluation > 0){
@@ -172,10 +176,7 @@ int main()
 	Mat img2 = imread(_ImageMatch);
 	//Mat img1 = imread("./img/fieldMap2.jpg");
 	//Mat img2 = imread("./img/c109.jpg");
-	Mat match;	
 	Mat kaitenImg;
-	Point Pt;
-	Point maxPt;
 	float ex_angle = 0.0;
 	double maxValue = 0;
 
@@ -220,12 +221,12 @@ int main()
 	Point2f center(img2.cols / 2.0, img2.rows / 2.0);
 	Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
 	warpAffine(img2, kaitenImg, matrix, img2.size());
-	matchTemplate(sub, kaitenImg, match, CV_TM_CCOEFF_NORMED);
-	minMaxLoc(match, NULL, &maxValue, NULL, &maxPt);
+	//matchTemplate(sub, kaitenImg, match, CV_TM_CCOEFF_NORMED);
+	minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
 	rectangle(sub , maxPt, Point(maxPt.x + kaitenImg.cols, maxPt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
 	imshow("kaitenImg", kaitenImg);
 	printf("Angle = %f position.x = %d position.y = %d \n", angle, maxPt.x , maxPt.y);
-	printf("%ld\n" , clock()-start);
+	printf("%ld[ms]\n" , clock()-start);
 	imshow("Image", sub);
 	waitKey(0);
 }
