@@ -123,7 +123,7 @@ int main()
 	MatchingEvaluation(sub, img2, Angle, 5, 1);
 
 	//MatchingEvaluation(sub, img2, Angle, 0, 1);
-	
+
 	float angle = Angle;
 	float scale = 1.0;
 	Point2f center(img2.cols / 2.0, img2.rows / 2.0);
