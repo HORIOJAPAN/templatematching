@@ -16,9 +16,9 @@ double	maxValue = 0;
 # define _Evaluate 0 
 // 0:テンプレートマッチングのみ  1:評価値計算
 
-# define _ImageDirectory /img
-# define _ImageField /fieldMap2.jpg
-# define _ImageMatch /a001.jpg
+// # define _ImageDirectory "/img
+# define _ImageField "/img/fieldMap2.jpg"
+# define _ImageMatch "/img/a001.jpg"
 
 
 
@@ -40,7 +40,6 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 	double maxVal_1 = 0, maxVal_2 = 0;
 
 	for (float i = (angle_center)-(angle_width); i < ((angle_center) + (angle_width) + 1) ; i += angle_shredded){
-
 		// 回転：  [deg]
 		float angle = i;
 		// 大きさ：  [倍]
@@ -92,8 +91,8 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 
 int main()
 {
-	Mat img1 = imread("_ImageDirectory_ImageField");
-	Mat img2 = imread("_ImageDirectory_ImageMatch");
+	Mat img1 = imread(_ImageField);
+	Mat img2 = imread(_ImageMatch);
 	//Mat img1 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/fieldMap2.jpg");
 	//Mat img2 = imread("C:/Users/user/Desktop/FeatureMatching/FeatureMatching/img/c109.jpg");
 	Mat match;	
