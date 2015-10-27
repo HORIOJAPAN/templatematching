@@ -50,10 +50,10 @@ double	maxValue = 0;
 float	Angle = 0.0;
 float	D = 0.0;
 
-float	kakudoHaba1 = 45;	// 1回目角度幅（片方向）
+float	kakudoHaba1 = 24;	// 1回目角度幅（片方向）
 float	kakudoHaba2 = 8;	// 2回目
 
-float	kizamiKakudo1 = 5;	// 1回目刻み角度
+float	kizamiKakudo1 = 4;	// 1回目刻み角度
 float	kizamiKakudo2 = 1;	// 2回目
 
 Point maxPt;
@@ -153,7 +153,7 @@ void Localization(		const cv::Mat img1,			// 画像１のファイル名
 		Hyoka3(i, distance, maxVal, Evaluation3);
 		// ↑評価値の計算おわり
 
-		std::cout << (int)i << "\t" << maxVal << " \t" << Pt.x << "," << Pt.y << "\t" << (int)distance << "   " <<
+		std::cout << (int)i << "\t" << maxVal << "   " << Pt.x << "," << Pt.y << "   " << (int)distance << "\t" <<
 			Evaluation1 << "\t" << Evaluation2 << "\t" << Evaluation3 << std::endl;
 
 		//printf("%d\t%lf\t%d,%d\n", (int)i, maxVal, Pt.x, Pt.y);
@@ -233,7 +233,7 @@ void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
 			maxEvaluation3 = Evaluation3;
 		}
 # endif
-		std::cout << (int)i << "\t" << maxVal<< " " << Pt.x<< "," << Pt.y << "\t" << (int)distance << "\t" <<
+		std::cout << (int)i << "\t" << maxVal<< "   " << Pt.x<< "," << Pt.y << "   " << (int)distance << "\t" <<
 			Evaluation1 << "\t" << Evaluation2 << "\t" << Evaluation3 << std::endl;
 	}
 }
@@ -267,7 +267,7 @@ int main()
 # endif
 
 	printf("%d度ずつ刻んでマッチ開始\n", (int)kizamiKakudo1);
-	printf("度\t相関値\t\tx,y\t距離\t評価値\n");
+	printf("相対度\t相関値\tx,y\t距離\t評価値\n");
 	MatchingEvaluation(sub, img2, 0, kakudoHaba1, kizamiKakudo1);
 
 	/*
@@ -278,8 +278,8 @@ int main()
 	}
 	*/
 
-	printf("1度ずつ刻んでマッチ開始\n");
-	printf("度\t相関値\t\tx,y\t\t距離\t評価値\n");
+	printf("%d度ずつ刻んでマッチ開始\n", (int)kizamiKakudo2);
+	printf("相対度\t相関値\tx,y\t距離\t評価値\n");
 
 	D = 0.0;
 	MatchingEvaluation(sub, img2, Angle, kakudoHaba2, kizamiKakudo2);
