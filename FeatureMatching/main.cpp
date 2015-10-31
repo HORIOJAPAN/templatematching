@@ -6,18 +6,29 @@
 #include <stdio.h>
 #include <iostream>
 
+# define PI 3.1415926
+
 using namespace cv;
 
-# define _Evaluate 0
-// 0:評価値基準の最適座標  1:自己位置座標を無視してマッチング率基準の最適座標
-
 # define _ImageField "./img/fieldMap2.jpg"
-# define _ImageMatch "./img/b102.jpg"
+# define _ImageMatch "./img/c103.jpg"
 // _MatchArea => a:1 b:2 c:3
-# define _MatchArea 2
-// _HyokaKizyun : 評価基準1,2,3のどれにするか
-# define _HyokaKizyun Evaluation1
+# define _MatchArea 3
 
+// # define _HyokaNumber 0 : 評価基準1,2,3のどれにするか，0にするとマッチング率のみで処理
+# define _HyokaNumber 3
+
+# if _HyokaNumber == 1
+# define _HyokaKizyun Evaluation1
+# elif _HyokaNumber == 2
+# define _HyokaKizyun Evaluation2
+# elif _HyokaNumber == 3
+# define _HyokaKizyun Evaluation3
+# else
+# define _HyokaKizyun Evaluation0
+# endif
+
+// グローバル環境イメージのサイズ指定
 # define _FieldHeight 1000
 # define _FieldWidth 1000
 
@@ -46,22 +57,30 @@ int		ideal_x = _FieldHeight / 2;
 int		ideal_y = _FieldWidth / 2;
 # endif
 
-double	maxValue = 0;
-float	Angle = 0.0;
-float	D = 0.0;
+// 回転行列に用いる倍率（1倍に固定）
+# define scale 1
 
-float	kakudoHaba1 = 24;	// 1回目角度幅（片方向）
-float	kakudoHaba2 = 8;	// 2回目
+float	kakudoHaba0 = 45;	// テスト処理用
+float	kakudoHaba1 = 18;	// 1回目角度幅（片方向）
+float	kakudoHaba2 = 5;	// 2回目
 
-float	kizamiKakudo1 = 4;	// 1回目刻み角度
+float	kizamiKakudo0 = 5;	// テスト処理用
+float	kizamiKakudo1 = 3;	// 1回目刻み角度
 float	kizamiKakudo2 = 1;	// 2回目
 
+// 最大の点での各値をmax付きの変数に格納
 Point maxPt;
 Mat maxMatch;
-float maxEvaluation = -100;
-float maxEvaluation1 = -100;
-float maxEvaluation2 = -100;
-float maxEvaluation3 = -100;
+// Eva0はマッチング率のみの生データ
+double	maxEvaluation0 = 0;
+float	maxAngle = 0.0;
+// 採用する評価値を代入
+float maxEvaluation = -10000;
+// 他の評価方法での出力用の参考値
+float maxEvaluation1 = -10000;
+float maxEvaluation2 = -10000;
+float maxEvaluation3 = -10000;
+// 最大の点での理想点との相対距離
 int maxDistance;
 
 
@@ -82,7 +101,7 @@ int maxDistance;
 
 /*
  * 評価値の計算方法
- * 引数は「tilt:相対角度」「dist:相対距離」「matchRatio:画像のマッチング率」
+ * 引数は「tilt:相対角度」「dist:相対距離」「matchRatio:画像のマッチング率」「score:評価値を返すポインタ」
  * 角度は[deg]，距離は[pixel/5cm],マッチング率は 1 ~ 0
  * 角度と座標は実際のロボットの移動精度を考慮する
  * マッチング率は2枚の画像を載せたときにそのピクセルごとにアルかナイかを判定してる様子
@@ -91,184 +110,119 @@ int maxDistance;
 */
 
 
-void Hyoka1(float tilt, int dist, float matchRatio ,float& point){
+void Hyoka1(float tilt, int dist, float matchRatio ,float& score){
 	if (dist > 6){
-		point = matchRatio - log10(dist) / 5;
+		score = matchRatio - log10(dist) / 5;
 	}
 	else{
-		point = matchRatio;
+		score = matchRatio;
 	}
 }
-void Hyoka2(float tilt, int dist, float matchRatio, float& point){
-	point = matchRatio * 100 - dist;
+void Hyoka2(float tilt, int dist, float matchRatio, float& score){
+	score = 100 - dist / matchRatio;
 }
-void Hyoka3(float tilt, int dist, float matchRatio, float& point){
-	point = 100 - dist - abs(tilt)*3 ;
-}
-
-
-
-void Localization(		const cv::Mat img1,			// 画像１のファイル名
-						const cv::Mat img2,			// 画像２のファイル名
-						float angle_center,			// 幅の中心
-						float angle_width,			// 角度幅
-						float angle_shredded		// 刻み角度				
-						)
-{
-	// テンプレートマッチングと評価値の算出・最適値の出力
-
-	Mat match;
-	Mat kaitenImg;
-	Point Pt;
-	float distance;		// 理想座標とマッチング座標の相対距離
-	float Evaluation1;	// 評価値
-	float Evaluation2;	// 評価値
-	float Evaluation3;	// 評価値
-	double maxVal;		// マッチング率の最大値
-
-	for (float i = (angle_center)-(angle_width); i < ((angle_center) + (angle_width) + 1) ; i += angle_shredded){
-		// 回転：  [deg]
-		float angle = i;
-		// 大きさ：  [倍]
-		float scale = 1.0;
-		// 画像の中心を求める
-		Point2f center(img2.cols / 2.0, img2.rows / 2.0);
-		// 回転行列
-		Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
-		// 画像を回転
-		warpAffine(img2, kaitenImg, matrix, img2.size());
-		// ウィンドウ表示
-		imshow("kaitenImg", kaitenImg);
-		// マッチング
-		matchTemplate(img1, kaitenImg, match, CV_TM_CCOEFF_NORMED);
-		// 相関値を求める
-		minMaxLoc(match, NULL, &maxVal, NULL, &Pt);
-		// エンコーダによる自己位置とマッチング後の自己位置の相対距離を求める
-		distance = sqrt(powf((Pt.x - ideal_x), 2) + powf((Pt.y - ideal_y), 2));
-
-
-		// ↓評価値の計算はじめ
-		Hyoka1(i, distance, maxVal, Evaluation1);
-		Hyoka2(i, distance, maxVal, Evaluation2);
-		Hyoka3(i, distance, maxVal, Evaluation3);
-		// ↑評価値の計算おわり
-
-		std::cout << (int)i << "\t" << maxVal << "   " << Pt.x << "," << Pt.y << "   " << (int)distance << "\t" <<
-			Evaluation1 << "\t" << Evaluation2 << "\t" << Evaluation3 << std::endl;
-
-		//printf("%d\t%lf\t%d,%d\n", (int)i, maxVal, Pt.x, Pt.y);
-
-		if (maxVal > maxValue){
-			ideal_x = Pt.x;
-			ideal_y = Pt.y;
-			maxValue = maxVal;
-			Angle = angle;
-		}
-	}
-	printf("%f\t%lf\t%d,%d\n", Angle, maxValue, ideal_x, ideal_y);
+void Hyoka3(float tilt, int dist, float matchRatio, float& score){
+	score = 100 - pow(dist,0.7) / matchRatio * (cos(tilt * PI / 360) + 1) / 2;
 }
 
-void MatchingEvaluation(	const cv::Mat img1,			// 画像１のファイル名
-							const cv::Mat img2,			// 画像２のファイル名
+
+void MatchingEvaluation(	const cv::Mat img1,			// グローバル環境イメージ（大）
+							const cv::Mat img2,			// ローカル環境イメージ（小）
 							float angle_center,			// 幅の中心
-							float angle_width,			// 角度幅
-							float angle_shredded		// 刻み角度				
+							float angleHalfRange,		// 角度幅
+							float angleDelta			// 刻み角度
 							)
 {
 	// テンプレートマッチングと評価値の算出・最適値の出力
 
-	Mat match;
-	Mat kaitenImg;
-	Point Pt;
+	Mat match;		// マッチング率の配列
+	Mat kaitenImg;	// 回転させた地図を格納
+	Point Pt;		// 画像内での最高マッチング率の座標を格納
 	float distance;		// 理想座標とマッチング座標の相対距離
+	double Evaluation0;	// 生マッチング率の最大値
 	float Evaluation1;	// 評価値
 	float Evaluation2;	// 評価値
 	float Evaluation3;	// 評価値
-	double maxVal;		// マッチング率の最大値
-	// double maxVal_1 = 0, maxVal_2 = 0;
 
-	for (float i = (angle_center)-(angle_width); i < ((angle_center)+(angle_width)+1); i += angle_shredded){
-		// 回転：  [deg]
+	// printf("%d度ずつ刻んでマッチ開始\n", (int)angleDelta);
+	// printf("相対度\t相関値   \tx,y\t距離\t評価値\n");
+	std::cout << "　■　中央角度：" << (int)angle_center << "[deg]　ピッチ：" << (int)angleDelta << "[deg]　　マッチング開始\n" << "回転角\t相関値   \tx,y\t距離\t評価値" << std::endl;
+
+	for (float i = (angle_center)-(angleHalfRange); i < ((angle_center)+(angleHalfRange)+1); i += angleDelta)
+	{
+		// 回転角[deg]
 		float angle = i;
-		// 大きさ：  [倍]
-		float scale = 1.0;
+
 		// 画像の中心を求める
-		Point2f center(img2.cols / 2.0, img2.rows / 2.0);
-		// 回転行列
-		Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
+		// 回転行列の定義
 		// 画像を回転
+		// 回転後画像をウィンドウ表示
+		Point2f center(img2.cols / 2.0, img2.rows / 2.0);
+		Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
 		warpAffine(img2, kaitenImg, matrix, img2.size());
-		// ウィンドウ表示
 		imshow("kaitenImg", kaitenImg);
+
 		// テンプレートマッチング
+		// 相関値の配列から最大値を抽出する
 		matchTemplate(img1, kaitenImg, match, CV_TM_CCOEFF_NORMED);
-		// 相関値を求める
-		minMaxLoc(match, NULL, &maxVal, NULL, &Pt);
-		// エンコーダによる自己位置とマッチング後の自己位置の相対距離を求める
+		minMaxLoc(match, NULL, &Evaluation0, NULL, &Pt);
+
+		// 理想の自己位置座標と最適マッチング座標との相対距離の算出
 		distance = sqrt(powf((Pt.x - ideal_x), 2) + powf((Pt.y - ideal_y), 2));
 
+		// 各種評価値の計算
+		Hyoka1(angle, distance, Evaluation0, Evaluation1);
+		Hyoka2(angle, distance, Evaluation0, Evaluation2);
+		Hyoka3(angle, distance, Evaluation0, Evaluation3);
+		// （match配列の全要素に対して評価処理すべき）
 
-		Hyoka1(i, distance, maxVal, Evaluation1);
-		Hyoka2(i, distance, maxVal, Evaluation2);
-		Hyoka3(i, distance, maxVal, Evaluation3);
-
-
-# if _Evaluate == 1
-		if (maxVal > maxValue){
-			maxValue = maxVal;
-			Angle = angle;
-			maxPt = Pt; 
-			maxMatch = match;
-		}
-# else
 		if (_HyokaKizyun > maxEvaluation){
-			maxValue = maxVal;
-			Angle = angle;
-			maxPt = Pt; 
-			maxMatch = match;
+			maxEvaluation0 = Evaluation0;
+			maxAngle = angle;
+			maxPt = Pt;
 			maxDistance = distance;
-			maxEvaluation = Evaluation1;
+
+			maxEvaluation = _HyokaKizyun;
 			maxEvaluation1 = Evaluation1;
 			maxEvaluation2 = Evaluation2;
 			maxEvaluation3 = Evaluation3;
 		}
-# endif
-		std::cout << (int)i << "\t" << maxVal<< "   " << Pt.x<< "," << Pt.y << "   " << (int)distance << "\t" <<
-			Evaluation1 << "\t" << Evaluation2 << "\t" << Evaluation3 << std::endl;
+
+		std::cout << (int)i << "\t" << Evaluation0<< "   \t" << Pt.x<< "," << Pt.y << "\t" << (int)distance << "\t" <<
+			Evaluation1 << "   \t" << Evaluation2 << "   \t" << Evaluation3 << std::endl;
 	}
+	std::cout << std::endl;
 }
 
 
 int main()
 {
+	clock_t start = clock();
+	std::cout << "評価基準：" << _HyokaNumber << "\n" << std::endl;
+
+	// 画像の配列を宣言
 	Mat img1 = imread(_ImageField);
 	Mat img2 = imread(_ImageMatch);
 	//Mat img1 = imread("./img/fieldMap2.jpg");
 	//Mat img2 = imread("./img/c109.jpg");
 	Mat kaitenImg;
 
+	// 理想座標の指定（エンコーダやサーボの指定値による）
 	ideal_x -= leftMargin;
 	ideal_y -= upMargin;
 
-	clock_t start = clock();
+	// 画像img1からマッチング対象領域を指定して再定義
+	Mat fieldMap = img1(Rect(leftMargin, upMargin, (1000 - leftMargin - rightMargin), (1000 - upMargin - downMargin)) );
 
-	// img1の画像の領域を指定
-	Mat sub = img1(Rect(leftMargin, upMargin, 1000 - leftMargin - rightMargin, 1000 - upMargin - downMargin));
-	//imshow("Img", img2);
 
-# if _Evaluate
+	if (!_HyokaNumber){
+		printf("マッチング率から自己位置を見つけています...\n", kizamiKakudo0);
+		MatchingEvaluation(fieldMap, img2, 0, kakudoHaba0, kizamiKakudo0);
+	}
 
-	int m = 5;
-	printf("自己位置を見つけています...\n", m);
-	Localization(sub, img2, 0, 45, m);
+	MatchingEvaluation(fieldMap, img2, 0, kakudoHaba1, kizamiKakudo1);
 
-# endif
-
-	printf("%d度ずつ刻んでマッチ開始\n", (int)kizamiKakudo1);
-	printf("相対度\t相関値\t   x,y\t   距離\t評価値\n");
-	MatchingEvaluation(sub, img2, 0, kakudoHaba1, kizamiKakudo1);
-
-	/*
+	/* マッチング失敗を返す
 	if (D == 0.0){
 		printf("%f\n", D);
 		printf("No matching\n");
@@ -276,27 +230,23 @@ int main()
 	}
 	*/
 
-	printf("%d度ずつ刻んでマッチ開始\n", (int)kizamiKakudo2);
-	printf("相対度\t相関値\t  x,y\t   距離\t評価値\n");
+	MatchingEvaluation(fieldMap, img2, maxAngle, kakudoHaba2, kizamiKakudo2);
 
-	D = 0.0;
-	MatchingEvaluation(sub, img2, Angle, kakudoHaba2, kizamiKakudo2);
-
-	float angle = Angle;
-	float scale = 1.0;
 	Point2f center(img2.cols / 2.0, img2.rows / 2.0);
-	Mat matrix = cv::getRotationMatrix2D(center, angle, scale);
+	Mat matrix = cv::getRotationMatrix2D(center, maxAngle, scale);
 	warpAffine(img2, kaitenImg, matrix, img2.size());
-	//matchTemplate(sub, kaitenImg, match, CV_TM_CCOEFF_NORMED);
-	//minMaxLoc(maxMatch, NULL, &maxValue, NULL, &maxPt);
-	rectangle(sub , maxPt, Point(maxPt.x + kaitenImg.cols, maxPt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
+	rectangle(fieldMap, maxPt, Point(maxPt.x + kaitenImg.cols, maxPt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
+	imshow("rawImg", img2);
 	imshow("kaitenImg", kaitenImg);
 
-	std::cout << "\n" << (int)angle << "\t" << maxValue << "    " << maxPt.x << "," << maxPt.y << "\t" << (int)maxDistance << "   " <<
-		maxEvaluation1 << "\t" << maxEvaluation2 << "\t" << maxEvaluation3 << std::endl;
-	printf("%ld[ms]\n" , clock()-start);
 
-	imshow("Image", sub);
+	std::cout << "相対度\t相関値   \tx,y\t距離\t評価値" << std::endl;
+	std::cout << (int)maxAngle << "\t" << maxEvaluation0 << "   \t" << maxPt.x << "," << maxPt.y << "\t" << (int)maxDistance << "\t" <<
+		maxEvaluation1 << "   \t" << maxEvaluation2 << "   \t" << maxEvaluation3 << std::endl;
+	// printf("%ld[ms]\n" , clock()-start);
+	std::cout << "処理時間：" << clock() - start << "[ms]" << std::endl;
+
+	imshow("Image", fieldMap);
 	waitKey(0);
 }
 
