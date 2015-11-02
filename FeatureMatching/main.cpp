@@ -3,7 +3,6 @@
 #include <opencv2/nonfree/nonfree.hpp> // SIFT・SURFモジュール用
 #include <time.h>
 #include <math.h>
-#include <stdio.h>
 #include <iostream>
 
 # define PI 3.1415926
@@ -11,7 +10,7 @@
 using namespace cv;
 
 # define _ImageField "./img/fieldMap2.jpg"
-# define _ImageMatch "./img/c108.jpg"
+# define _ImageMatch "./img/c109.jpg"
 // _MatchArea => a:1 b:2 c:3
 # define _MatchArea 3
 
