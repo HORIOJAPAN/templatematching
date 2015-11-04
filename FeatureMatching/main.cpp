@@ -24,11 +24,12 @@ void Hyoka1(float tilt, float dist, float matchRatio, float& score){
 void MatchingEvaluation(
 	const cv::Mat img1,			// グローバル環境イメージ（大）
 	const cv::Mat img2,			// ローカル環境イメージ（小）
-	float &angle_center,			// 幅の中心
-	float angleHalfRange,		// 角度幅
+	float angle_base,			// 評価基準角度
+	float &angle_center,		// 評価中心角度
+	float angleHalfRange,		// 範囲半角
 	float angleDelta,			// 刻み角度
-	int &ideal_x,
-	int &ideal_y
+	float ideal_x,
+	float ideal_y
 	)
 {
 	// テンプレートマッチングと評価値の算出・最適値の出力
@@ -40,7 +41,7 @@ void MatchingEvaluation(
 	float Evaluation1;	// 評価値
 
 	double maxEvaluation0 = 0;
-	float maxAngle = angle_center;
+	float maxAngle = 0;
 	float maxEvaluation = -10000;
 	float maxDistance = 0;
 
@@ -64,7 +65,7 @@ void MatchingEvaluation(
 			for (int j = 0; j < match.rows; j++)
 			{
 				distance = sqrt((k - ideal_x)*(k - ideal_x) + (j - ideal_y)*(j - ideal_y));
-				Hyoka1(angle, distance, match.at<float>(j, k), Evaluation1);
+				Hyoka1((angle-angle_base), distance, match.at<float>(j, k), Evaluation1);
 
 				if (Evaluation1 > maxEvaluation){
 					maxEvaluation0 = match.at<float>(j, k);
@@ -79,9 +80,10 @@ void MatchingEvaluation(
 	}
 	std::cout << std::endl;
 
-	ideal_x = Pt.x;
-	ideal_y = Pt.y;
-	angle_center = maxAngle;
+	sp_x = Pt.x;
+	sp_y = Pt.y;
+	sp_angle = maxAngle;
+	angle_center = sp_angle;
 }
 
 // 外側をマッチング対象としないとき、外側からの率を指定
@@ -90,8 +92,10 @@ void MatchingEvaluation(
 # define _UpMargin 0.3
 # define _DownMargin 0.3
 
+# define fieldSquareSize 350		// フィールド画像の縦横フル長さ
+# define matchSquareSize 200		// マッチ画像の縦横フル長さ
 
-void spEstimate(int &ideal_x, int &ideal_y , int &ideal_angle , string imageName)
+void spEstimate(int ideal_x, int ideal_y , float ideal_angle , string imageName)
 { // Self Position Estimate
 	std::cout << "評価基準：1" << "\n" << std::endl;
 
@@ -100,39 +104,37 @@ void spEstimate(int &ideal_x, int &ideal_y , int &ideal_angle , string imageName
 	Mat img2 = imread("./img/c109.jpg");
 	Mat kaitenImg;
 
-	const int rightMargin = img1.cols * _RightMargin;
 	const int leftMargin = img1.cols * _LeftMargin;
 	const int upMargin = img1.rows * _UpMargin;
+	const int rightMargin = img1.cols * _RightMargin;
 	const int downMargin = img1.rows * _DownMargin;
 
-
-	Point ideal_Pt;
-	float tempAngle = ideal_angle;
-
-	// 理想座標の指定（エンコーダやサーボの指定値による）
-	ideal_x -= leftMargin;
-	ideal_y -= upMargin;
+	const int leftBorder = ideal_x - (fieldSquareSize - matchSquareSize) / 2;
+	const int upBorder = ideal_y - (fieldSquareSize - matchSquareSize) / 2;
+	const int rightBorder = ideal_x + (fieldSquareSize + matchSquareSize) / 2;
+	const int downBorder = ideal_y + (fieldSquareSize + matchSquareSize)/2;
 
 	// 画像img1からマッチング対象領域を指定して再定義
-	Mat fieldMap = img1(Rect(leftMargin, upMargin, (img1.cols - leftMargin - rightMargin), (img1.rows - upMargin - downMargin)));
+	Mat fieldMap = img1(Rect(leftBorder, upBorder, rightBorder - leftBorder, downBorder - upBorder));
 
+	Point ideal_Pt;
 	ideal_Pt = Point(ideal_x, ideal_y);
-	tempAngle = ideal_angle;
-	MatchingEvaluation(fieldMap, img2, tempAngle, kakudoHaba1, kizamiKakudo1, ideal_Pt.x, ideal_Pt.y);
+	float tempAngle = ideal_angle;	// 評価の中心角の初期化
+
+	// 理想座標の指定（エンコーダやサーボの指定値による）
+	ideal_Pt.x -= leftBorder;
+	ideal_Pt.y -= upBorder;
+
+
+	MatchingEvaluation(fieldMap, img2, ideal_angle, tempAngle, kakudoHaba1, kizamiKakudo1, ideal_Pt.x, ideal_Pt.y);
 	// この辺でマッチング失敗を返す？
 
-	ideal_Pt = Point(ideal_x, ideal_y);
-	tempAngle = ideal_angle;
-	MatchingEvaluation(fieldMap, img2, tempAngle, kakudoHaba2, kizamiKakudo2, ideal_Pt.x, ideal_Pt.y);
-
-	ideal_x = ideal_Pt.x;
-	ideal_y = ideal_Pt.y;
-	ideal_angle = tempAngle;
-
+	MatchingEvaluation(fieldMap, img2, ideal_angle, tempAngle, kakudoHaba2, kizamiKakudo2, ideal_Pt.x, ideal_Pt.y);
+	
 	Point2f center(img2.cols / 2.0, img2.rows / 2.0);
 	Mat matrix = cv::getRotationMatrix2D(center, tempAngle, 1);
 	warpAffine(img2, kaitenImg, matrix, img2.size());
-	rectangle(fieldMap, ideal_Pt, Point(ideal_Pt.x + kaitenImg.cols, ideal_Pt.y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
+	rectangle(fieldMap, Point(sp_x, sp_y), Point(sp_x + kaitenImg.cols, sp_y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
 
 	imshow("Image", fieldMap);
 	imshow("kaitenImg", kaitenImg);
@@ -167,8 +169,13 @@ void main(){
 	sp_angle = ideal_angle;
 	string imageName = "./img/fieldMap2.jpg";
 
+
 	spEstimate(sp_x, sp_y, sp_angle, imageName);
 
+	sp_x += ideal_x - (fieldSquareSize - matchSquareSize) / 2;
+	sp_y += ideal_y - (fieldSquareSize - matchSquareSize) / 2;
+
+	std::cout << "相対度\tx,y\n" << ideal_angle << "   \t" << ideal_x << "," << ideal_y << std::endl;
 	std::cout << "相対度\tx,y\n" << sp_angle << "   \t" << sp_x << "," << sp_y << std::endl;
 	std::cout << "処理時間：" << clock() - start << "[ms]" << std::endl;
 
