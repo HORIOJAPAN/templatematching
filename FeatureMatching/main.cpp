@@ -22,7 +22,7 @@ using namespace cv;
 # define _FastMatching 0
 
 // # define _HyokaNumber 0 : 評価基準1,2,3のどれにするか，0にするとマッチング率のみで処理
-# define _HyokaNumber 1
+# define _HyokaNumber 0
 
 # if _HyokaNumber == 1
 # define _HyokaKizyun Evaluation1
@@ -203,6 +203,7 @@ void MatchingEvaluation(const cv::Mat img1,			// グローバル環境イメージ（大）
 # endif
 
 					distance = sqrt(powf((k - ideal_x), 2) + powf((j - ideal_y), 2));
+					Evaluation0 = match.at<float>(j, k);
 					Hyoka1(angle, distance, match.at<float>(j, k), Evaluation1);
 					Hyoka2(angle, distance, match.at<float>(j, k), Evaluation2);
 					Hyoka3(angle, distance, match.at<float>(j, k), Evaluation3);
@@ -303,7 +304,7 @@ int main()
 		MatchingEvaluation(fieldMap, img2, 0, kakudoHaba0, kizamiKakudo0);
 	}
 
-	MatchingEvaluation(fieldMap, img2, 0, kakudoHaba1, kizamiKakudo1);
+	MatchingEvaluation(fieldMap, img2, maxAngle, kakudoHaba1, kizamiKakudo1);
 
 	/* マッチング失敗を返す
 	if (D == 0.0){
