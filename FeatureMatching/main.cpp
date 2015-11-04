@@ -11,11 +11,6 @@ int sp_x;
 int sp_y;
 int sp_angle;
 
-float	kakudoHaba1 = 24;	// 1回目角度幅（片方向）
-float	kakudoHaba2 = 5;	// 2回目
-
-float	kizamiKakudo1 = 3;	// 1回目刻み角度
-float	kizamiKakudo2 = 1;	// 2回目
 
 void Hyoka1(float tilt, float dist, float matchRatio, float& score){
 	score = (matchRatio * 100 - dist / 5 * (cos(tilt * 3.1415926 / 360) + 1));
@@ -86,17 +81,21 @@ void MatchingEvaluation(
 	angle_center = sp_angle;
 }
 
-# define fieldSquareSize 350		// フィールド画像の縦横フル長さ
-# define matchSquareSize 200		// マッチ画像の縦横フル長さ
+# define fieldSquareSize 350		// トリミング後、フィールド画像の縦横フル長さ
+# define matchSquareSize 200		// トリミング後、マッチ画像の縦横フル長さ
 
-void spEstimate(int ideal_x, int ideal_y , float ideal_angle , string imageName)
-{ // Self Position Estimate
-	std::cout << "評価基準：1" << "\n" << std::endl;
+# define kakudoHaba1 24		// 1回目角度幅（片方向）
+# define kakudoHaba2 5		// 2回目
+
+# define kizamiKakudo1 3	// 1回目刻み角度
+# define kizamiKakudo2 1	// 2回目
+
+void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img2)
+{ // Self Position Estimate		//(x, y, angle, fieldMap, matchMap)
 
 	// 画像の配列を宣言
-	Mat img1 = imread(imageName);
-	Mat img2 = imread("./img/c001.jpg");
-	Mat kaitenImg;
+	// Mat img1 = imread(imageName);
+	// Mat img2 = imread("./img/a001.jpg");
 
 	const int leftBorder = ideal_x - (fieldSquareSize - matchSquareSize) / 2;
 	const int upBorder = ideal_y - (fieldSquareSize - matchSquareSize) / 2;
@@ -130,6 +129,7 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , string imageName)
 	MatchingEvaluation(fieldMap, matchMap, ideal_angle, tempAngle, kakudoHaba2, kizamiKakudo2, ideal_Pt.x, ideal_Pt.y);
 	
 	Point2f center(matchMap.cols / 2.0, matchMap.rows / 2.0);
+	Mat kaitenImg;
 	Mat matrix = cv::getRotationMatrix2D(center, tempAngle, 1);
 	warpAffine(matchMap, kaitenImg, matrix, matchMap.size());
 	rectangle(fieldMap, Point(sp_x, sp_y), Point(sp_x + kaitenImg.cols, sp_y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
@@ -139,9 +139,9 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , string imageName)
 }
 
 // _MatchArea => a:1 b:2 c:3
-# define _MatchArea 3
+# define _MatchArea 1
 
-int ideal_angle = 0;
+int ideal_angle = -8;
 
 # if _MatchArea == 1
 int		ideal_x = 175;
@@ -164,9 +164,10 @@ void main(){
 	sp_x = ideal_x;
 	sp_y = ideal_y;
 	sp_angle = ideal_angle;
-	string imageName = "./img/fieldMap2.jpg";
+	Mat img1 = imread("./img/fieldMap2.jpg");
+	Mat img2 = imread("./img/a001.jpg");
 
-	spEstimate(sp_x, sp_y, sp_angle, imageName);
+	spEstimate(sp_x, sp_y, sp_angle, img1, img2);
 
 	// ↓これの結果とsp_angleがマッチング結果の座標と角度の絶対値(フィールド画像の座標系)
 	sp_x += ideal_x - (fieldSquareSize - matchSquareSize) / 2;
