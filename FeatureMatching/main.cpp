@@ -1,6 +1,5 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_lib.hpp>
-#include <opencv2/nonfree/nonfree.hpp> // SIFT・SURFモジュール用
 
 using namespace cv;
 
