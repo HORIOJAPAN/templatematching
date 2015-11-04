@@ -10,9 +10,9 @@
 using namespace cv;
 
 # define _ImageField "./img/fieldMap2.jpg"
-# define _ImageMatch "./img/c109.jpg"
+# define _ImageMatch "./img/a108.jpg"
 // _MatchArea => a:1 b:2 c:3
-# define _MatchArea 3
+# define _MatchArea 1
 
 // グローバル環境イメージのサイズ指定
 # define _FieldHeight 1000
@@ -47,7 +47,7 @@ int		ideal_y = _FieldWidth / 2;
 # define scale 1
 
 float	kakudoHaba0 = 45;	// テスト処理用
-float	kakudoHaba1 = 18;	// 1回目角度幅（片方向）
+float	kakudoHaba1 = 24;	// 1回目角度幅（片方向）
 float	kakudoHaba2 = 5;	// 2回目
 
 float	kizamiKakudo0 = 5;	// テスト処理用
