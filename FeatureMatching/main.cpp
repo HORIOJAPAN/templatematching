@@ -10,6 +10,7 @@ using namespace cv;
 int sp_x;
 int sp_y;
 int sp_angle;
+int sp_score;
 
 
 void Hyoka1(float tilt, float dist, float matchRatio, float& score){
@@ -73,6 +74,7 @@ void MatchingEvaluation(
 						Pt = Point(k, j);
 						maxDistance = distance;
 						maxEvaluation = Evaluation1;
+						sp_score = Evaluation1;
 					}
 				}
 			}
@@ -98,21 +100,12 @@ void MatchingEvaluation(
 
 void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img2)
 { // Self Position Estimate		//(x, y, angle, fieldMap, matchMap)
-
-	// 画像の配列を宣言
-	// Mat img1 = imread(imageName);
-	// Mat img2 = imread("./img/a001.jpg");
-
+	
 	const int leftBorder = ideal_x - (fieldSquareSize) / 2;
 	const int upBorder = ideal_y - (fieldSquareSize) / 2;
 	const int rightBorder = ideal_x + (fieldSquareSize) / 2;
 	const int downBorder = ideal_y + (fieldSquareSize) / 2;
-	/*
-	const int leftBorder = ideal_x - (fieldSquareSize - matchSquareSize) / 2;
-	const int upBorder = ideal_y - (fieldSquareSize - matchSquareSize) / 2;
-	const int rightBorder = ideal_x + (fieldSquareSize + matchSquareSize) / 2;
-	const int downBorder = ideal_y + (fieldSquareSize + matchSquareSize) / 2;
-	*/
+
 	const int leftBorder2 = (img2.cols - matchSquareSize)/ 2;
 	const int upBorder2 = (img2.rows - matchSquareSize) / 2;
 	const int rightBorder2 = (img2.cols + matchSquareSize) / 2;
@@ -121,7 +114,6 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img
 	// 画像img1からマッチング対象領域を指定して再定義
 	Mat fieldMap = img1(Rect(leftBorder, upBorder, rightBorder - leftBorder, downBorder - upBorder));
 	Mat matchMap = img2(Rect(leftBorder2, upBorder2, rightBorder2 - leftBorder2, downBorder2 - upBorder2));
-	// Mat matchMap = img2(Rect(leftBorder, upBorder, rightBorder - leftBorder, downBorder - upBorder));
 
 	std::cout << "元マッチ画像サイズ\t" << img2.rows << "\t" << img2.cols << "\t" << "新マッチ画像サイズ\t" << matchMap.cols << "\t" << matchMap.rows << "\t" << "\n" << std::endl;
 
@@ -135,7 +127,6 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img
 
 
 	MatchingEvaluation(fieldMap, matchMap, ideal_angle, tempAngle, kakudoHaba1, kizamiKakudo1, ideal_Pt.x, ideal_Pt.y);
-	// この辺でマッチング失敗を返す？
 
 	MatchingEvaluation(fieldMap, matchMap, ideal_angle, tempAngle, kakudoHaba2, kizamiKakudo2, ideal_Pt.x, ideal_Pt.y);
 	
@@ -166,8 +157,8 @@ int		ideal_y = 523;
 int		ideal_x = 711;
 int		ideal_y = 558;
 # else
-int		ideal_x = _FieldHeight / 2;
-int		ideal_y = _FieldWidth / 2;
+int		ideal_x = 500;
+int		ideal_y = 700;
 # endif
 
 
@@ -179,6 +170,7 @@ void main(){
 	sp_x = ideal_x;
 	sp_y = ideal_y;
 	sp_angle = ideal_angle;
+	sp_score = 0;
 	Mat img1 = imread("./img/fieldMap2.jpg");
 	Mat img2 = imread("./img/a001.jpg");
 
@@ -189,7 +181,7 @@ void main(){
 	sp_y += ideal_y - (fieldSquareSize - matchSquareSize) / 2;
 
 	std::cout << "入力：\n相対度\tx,y\n" << ideal_angle << "   \t" << ideal_x << "," << ideal_y << std::endl;
-	std::cout << "出力：\n相対度\tx,y\n" << sp_angle << "   \t" << sp_x << "," << sp_y << std::endl;
+	std::cout << "出力：\n相対度\tx,y\tscore\n" << sp_angle << "   \t" << sp_x << "," << sp_y << "\t" << sp_score << std::endl;
 	std::cout << "処理時間：" << clock() - start << "[ms]" << std::endl;
 
 	waitKey(0);
