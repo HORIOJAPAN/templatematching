@@ -13,7 +13,11 @@ int sp_angle;
 
 
 void Hyoka1(float tilt, float dist, float matchRatio, float& score){
-	score = (matchRatio * 100 - dist / 5 * (cos(tilt * 3.1415926 / 360) + 1));
+	// score = matchRatio * 100;
+	// score = (matchRatio * 100 - dist / 5 * (cos(tilt * 3.1415926 / 180) + 1));
+	// score = 100 * (cos(tilt * 3.1415926 / 180) + 1) / 2 - (pow(dist, 0.7) + 5) / matchRatio;
+	score = 100 * powf((cos(tilt * 3.1415926 / 180) + 1) / 2, 3) - (pow(dist, 0.75) + 5) / matchRatio;
+	// 100*POWER((COS($B8*PI()/180)+1)/2,$D$2)-(POWER(D$5,$D$1)+5)/($C8/100)
 }
 
 void MatchingEvaluation(
@@ -60,14 +64,16 @@ void MatchingEvaluation(
 			for (float j = 0; j < match.rows; j++)
 			{
 				distance = sqrt((k - ideal_x)*(k - ideal_x) + (j - ideal_y)*(j - ideal_y));
-				Hyoka1((angle-angle_base), distance, match.at<float>(j, k), Evaluation1);
+				if (match.at<float>(j, k) > 0.1){
+					Hyoka1((angle - angle_base), distance, match.at<float>(j, k), Evaluation1);
 
-				if (Evaluation1 > maxEvaluation){
-					maxEvaluation0 = match.at<float>(j, k);
-					maxAngle = angle;
-					Pt = Point(k, j);
-					maxDistance = distance;
-					maxEvaluation = Evaluation1;
+					if (Evaluation1 > maxEvaluation){
+						maxEvaluation0 = match.at<float>(j, k);
+						maxAngle = angle;
+						Pt = Point(k, j);
+						maxDistance = distance;
+						maxEvaluation = Evaluation1;
+					}
 				}
 			}
 		}
@@ -97,11 +103,16 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img
 	// Mat img1 = imread(imageName);
 	// Mat img2 = imread("./img/a001.jpg");
 
+	const int leftBorder = ideal_x - (fieldSquareSize) / 2;
+	const int upBorder = ideal_y - (fieldSquareSize) / 2;
+	const int rightBorder = ideal_x + (fieldSquareSize) / 2;
+	const int downBorder = ideal_y + (fieldSquareSize) / 2;
+	/*
 	const int leftBorder = ideal_x - (fieldSquareSize - matchSquareSize) / 2;
 	const int upBorder = ideal_y - (fieldSquareSize - matchSquareSize) / 2;
 	const int rightBorder = ideal_x + (fieldSquareSize + matchSquareSize) / 2;
 	const int downBorder = ideal_y + (fieldSquareSize + matchSquareSize) / 2;
-
+	*/
 	const int leftBorder2 = (img2.cols - matchSquareSize)/ 2;
 	const int upBorder2 = (img2.rows - matchSquareSize) / 2;
 	const int rightBorder2 = (img2.cols + matchSquareSize) / 2;
@@ -119,8 +130,8 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img
 	float tempAngle = ideal_angle;	// 評価の中心角の初期化
 
 	// 理想座標の指定（エンコーダやサーボの指定値による）
-	ideal_Pt.x -= leftBorder;
-	ideal_Pt.y -= upBorder;
+	ideal_Pt.x -= leftBorder + matchSquareSize / 2;
+	ideal_Pt.y -= upBorder + matchSquareSize / 2;
 
 
 	MatchingEvaluation(fieldMap, matchMap, ideal_angle, tempAngle, kakudoHaba1, kizamiKakudo1, ideal_Pt.x, ideal_Pt.y);
@@ -132,7 +143,9 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img
 	Mat kaitenImg;
 	Mat matrix = cv::getRotationMatrix2D(center, tempAngle, 1);
 	warpAffine(matchMap, kaitenImg, matrix, matchMap.size());
-	rectangle(fieldMap, Point(sp_x, sp_y), Point(sp_x + kaitenImg.cols, sp_y + kaitenImg.rows), Scalar(0, 0, 255), 2, 8, 0);
+	//rectangle(fieldMap, Point(sp_x, sp_y), Point(sp_x + kaitenImg.cols , sp_y + kaitenImg.rows ), Scalar(0, 0, 255), 1, 8, 0);
+	circle(fieldMap, Point(sp_x + kaitenImg.cols / 2, sp_y + kaitenImg.rows / 2), 6, Scalar(0, 0, 255), 1, CV_AA, 0);
+	circle(kaitenImg, Point(kaitenImg.cols / 2, kaitenImg.rows / 2), 6, Scalar(0, 0, 255), 1, CV_AA, 0);
 
 	imshow("Image", fieldMap);
 	imshow("kaitenImg", kaitenImg);
@@ -144,14 +157,14 @@ void spEstimate(int ideal_x, int ideal_y , float ideal_angle , Mat img1, Mat img
 int ideal_angle = -8;
 
 # if _MatchArea == 1
-int		ideal_x = 175;
-int		ideal_y = 403;
+int		ideal_x = 275;
+int		ideal_y = 503;
 # elif _MatchArea == 2
-int		ideal_x = 374;
-int		ideal_y = 423;
+int		ideal_x = 474;
+int		ideal_y = 523;
 # elif _MatchArea == 3
-int		ideal_x = 611;
-int		ideal_y = 458;
+int		ideal_x = 711;
+int		ideal_y = 558;
 # else
 int		ideal_x = _FieldHeight / 2;
 int		ideal_y = _FieldWidth / 2;
@@ -160,6 +173,8 @@ int		ideal_y = _FieldWidth / 2;
 
 void main(){
 	clock_t start = clock();
+
+	// angle の座標系に注意．
 
 	sp_x = ideal_x;
 	sp_y = ideal_y;
